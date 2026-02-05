@@ -2,6 +2,8 @@
   const App = (window.App = window.App || {});
   App.Ledger = App.Ledger || {};
 
+  let editingPersonId = "";
+
   function sumByType(txns, type) {
     return txns.reduce((acc, t) => (t.type === type ? acc + Number(t.amount || 0) : acc), 0);
   }
@@ -63,23 +65,110 @@
     const people = App.People.listPeople().slice().sort((a, b) => a.name.localeCompare(b.name));
     const activeId = App.People.getActivePersonId();
 
+    if (editingPersonId && !people.some((p) => p.id === editingPersonId)) {
+      editingPersonId = "";
+    }
+
     setHidden("peopleEmpty", people.length !== 0);
     setText("peopleMeta", `${people.length}/${App.People.MAX_PEOPLE} people`);
 
     for (const p of people) {
       const li = document.createElement("li");
+      li.className = "person-card";
 
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "person-btn";
-      btn.textContent = p.name;
-      btn.setAttribute("aria-current", p.id === activeId ? "true" : "false");
+      const row = document.createElement("div");
+      row.className = "person-row";
 
-      btn.addEventListener("click", () => {
-        const res = App.People.setActivePersonId(p.id);
-        if (!res.ok) return;
-        renderAll();
-      });
+      const isEditing = editingPersonId === p.id;
+
+      if (isEditing) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "person-edit-input";
+        input.value = p.name;
+        input.setAttribute("aria-label", `Edit ${p.name}`);
+
+        row.appendChild(input);
+
+        const actions = document.createElement("div");
+        actions.className = "person-actions";
+
+        const saveBtn = document.createElement("button");
+        saveBtn.type = "button";
+        saveBtn.className = "btn-small";
+        saveBtn.textContent = "Save";
+        saveBtn.addEventListener("click", () => {
+          clearError("personError");
+          const res = App.People.updatePerson(p.id, input.value);
+          if (!res.ok) {
+            setError("personError", res.error);
+            return;
+          }
+          editingPersonId = "";
+          renderAll();
+        });
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "btn-small btn-ghost";
+        cancelBtn.textContent = "Cancel";
+        cancelBtn.addEventListener("click", () => {
+          editingPersonId = "";
+          renderPeopleList();
+        });
+
+        actions.appendChild(saveBtn);
+        actions.appendChild(cancelBtn);
+        row.appendChild(actions);
+      } else {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "person-btn";
+        btn.textContent = p.name;
+        btn.setAttribute("aria-current", p.id === activeId ? "true" : "false");
+
+        btn.addEventListener("click", () => {
+          const res = App.People.setActivePersonId(p.id);
+          if (!res.ok) return;
+          renderAll();
+        });
+
+        const actions = document.createElement("div");
+        actions.className = "person-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn-small btn-ghost";
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", () => {
+          clearError("personError");
+          editingPersonId = p.id;
+          renderPeopleList();
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "btn-small btn-danger";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", () => {
+          clearError("personError");
+          const confirmed = window.confirm(`Delete ${p.name} and all their transactions?`);
+          if (!confirmed) return;
+          const res = App.People.deletePerson(p.id);
+          if (!res.ok) {
+            setError("personError", res.error);
+            return;
+          }
+          if (editingPersonId === p.id) editingPersonId = "";
+          renderAll();
+        });
+
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+
+        row.appendChild(btn);
+        row.appendChild(actions);
+      }
 
       const meta = document.createElement("div");
       meta.className = "person-meta";
@@ -96,7 +185,7 @@
       meta.appendChild(metaLeft);
       meta.appendChild(metaRight);
 
-      li.appendChild(btn);
+      li.appendChild(row);
       li.appendChild(meta);
       list.appendChild(li);
     }
@@ -167,6 +256,7 @@
         return;
       }
 
+      editingPersonId = "";
       input.value = "";
       App.People.setActivePersonId(res.person.id);
       renderAll();

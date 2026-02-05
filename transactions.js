@@ -59,6 +59,12 @@
     return listAll().filter((t) => t.personId === personId);
   }
 
+  function deleteByPersonId(personId) {
+    if (!personId) return;
+    const next = listAll().filter((t) => t.personId !== personId);
+    writeAll(next);
+  }
+
   function addTransaction({ personId, amount, date, type, note }) {
     if (!personId) return { ok: false, error: "No person selected." };
 
@@ -136,6 +142,7 @@
   App.Transactions.TYPES = TYPES;
   App.Transactions.listAll = listAll;
   App.Transactions.listByPersonId = listByPersonId;
+  App.Transactions.deleteByPersonId = deleteByPersonId;
   App.Transactions.addTransaction = addTransaction;
   App.Transactions.renderTransactionList = renderTransactionList;
 })();
