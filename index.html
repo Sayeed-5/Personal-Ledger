@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Personal Money Ledger</title>
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="data.js"></script>
+    <script defer src="people.js"></script>
+    <script defer src="transactions.js"></script>
+    <script defer src="ledger.js"></script>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <h1>Personal Money Ledger</h1>
+      <p class="subtitle">Track money GIVEN and RECEIVED with people. No balance is stored; it’s always recalculated.</p>
+    </header>
+
+    <main class="app" aria-label="Personal money ledger application">
+      <aside class="panel panel-left" aria-label="People">
+        <section class="card">
+          <h2>People</h2>
+
+          <form id="personForm" class="form" autocomplete="off">
+            <label class="field">
+              <span class="label">Add person</span>
+              <div class="row">
+                <input id="personName" name="personName" type="text" placeholder="e.g., Alex" maxlength="60" />
+                <button type="submit">Add</button>
+              </div>
+              <span id="personError" class="hint hint-error" role="alert" aria-live="polite"></span>
+              <span id="peopleMeta" class="hint" aria-live="polite"></span>
+            </label>
+          </form>
+
+          <div id="peopleEmpty" class="empty" hidden>
+            <p>No people yet. Add someone to start.</p>
+          </div>
+
+          <ul id="peopleList" class="list" aria-label="People list"></ul>
+        </section>
+      </aside>
+
+      <section class="panel panel-right" aria-label="Ledger">
+        <section class="card">
+          <div class="ledger-header">
+            <div>
+              <h2 id="activePersonTitle">Ledger</h2>
+              <p id="activePersonSubtitle" class="subtitle">Select a person to view their ledger.</p>
+            </div>
+            <div class="balance-box" aria-label="Current balance">
+              <div class="balance-line">
+                <span class="balance-label">Balance</span>
+                <span id="balanceValue" class="balance-value">—</span>
+              </div>
+              <div class="status-line">
+                <span class="status-label">Status</span>
+                <span id="statusValue" class="status-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <hr />
+
+          <section aria-label="Add transaction">
+            <h3>Add transaction</h3>
+
+            <form id="txForm" class="form" autocomplete="off">
+              <div class="grid">
+                <label class="field">
+                  <span class="label">Type</span>
+                  <select id="txType" name="txType">
+                    <option value="GIVEN">GIVEN</option>
+                    <option value="RECEIVED">RECEIVED</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span class="label">Amount</span>
+                  <input
+                    id="txAmount"
+                    name="txAmount"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </label>
+
+                <label class="field">
+                  <span class="label">Date (DD-MM-YYYY)</span>
+                  <input id="txDate" name="txDate" type="text" placeholder="DD-MM-YYYY" />
+                </label>
+
+                <label class="field field-wide">
+                  <span class="label">Note (optional)</span>
+                  <input id="txNote" name="txNote" type="text" maxlength="140" placeholder="Short note..." />
+                </label>
+              </div>
+
+              <div class="row">
+                <button id="txSubmit" type="submit">Add transaction</button>
+                <span id="txError" class="hint hint-error" role="alert" aria-live="polite"></span>
+              </div>
+            </form>
+          </section>
+
+          <hr />
+
+          <section aria-label="Transactions">
+            <div class="row row-between">
+              <h3>Transactions</h3>
+              <span id="txMeta" class="hint" aria-live="polite"></span>
+            </div>
+
+            <div id="txEmpty" class="empty" hidden>
+              <p>No transactions yet.</p>
+            </div>
+
+            <div class="table" role="table" aria-label="Transaction list">
+              <div class="table-head" role="row">
+                <div role="columnheader">Date</div>
+                <div role="columnheader">Type</div>
+                <div role="columnheader" class="right">Amount</div>
+                <div role="columnheader">Note</div>
+              </div>
+              <div id="txList" class="table-body" role="rowgroup"></div>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <small>Data is stored locally in your browser (localStorage).</small>
+    </footer>
+  </body>
+</html>
