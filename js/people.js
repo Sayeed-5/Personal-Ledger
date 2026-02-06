@@ -1,8 +1,26 @@
+import {
+  addDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  peopleCol,
+  query,
+  db,
+  updateDoc,
+  writeBatch,
+  where,
+  transCol,
+} from "./firebase.js";
+
 (() => {
   const App = (window.App = window.App || {});
   App.People = App.People || {};
 
   const MAX_PEOPLE = 50;
+  let peopleCache = [];
+  let unsubscribe = null;
+  const listeners = new Set();
 
   function normalizeName(name) {
     return String(name || "").trim();
@@ -12,24 +30,26 @@
     return normalizeName(name).toLocaleLowerCase();
   }
 
-  function newId() {
-    if (window.crypto && typeof window.crypto.randomUUID === "function") {
-      return window.crypto.randomUUID();
-    }
-    // Fallback: sufficiently unique for local usage
-    return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  function notify() {
+    listeners.forEach((fn) => fn(peopleCache));
+  }
+
+  function startListener() {
+    if (unsubscribe) return;
+    unsubscribe = onSnapshot(peopleCol, (snapshot) => {
+      peopleCache = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+      notify();
+    });
   }
 
   function listPeople() {
-    const people = App.Data.readPeople();
-    return Array.isArray(people) ? people : [];
+    return Array.isArray(peopleCache) ? peopleCache : [];
   }
 
-  function writePeople(people) {
-    App.Data.writePeople(people);
-  }
-
-  function addPerson(name) {
+  async function addPerson(name) {
     const clean = normalizeName(name);
     if (!clean) return { ok: false, error: "Name cannot be empty." };
 
@@ -40,12 +60,11 @@
     const exists = people.some((p) => normalizeNameKey(p.name) === key);
     if (exists) return { ok: false, error: "That person already exists." };
 
-    const person = { id: newId(), name: clean, createdAt: Date.now() };
-    writePeople([...people, person]);
-    return { ok: true, person };
+    const docRef = await addDoc(peopleCol, { name: clean, createdAt: Date.now() });
+    return { ok: true, person: { id: docRef.id, name: clean, createdAt: Date.now() } };
   }
 
-  function updatePerson(id, name) {
+  async function updatePerson(id, name) {
     const clean = normalizeName(name);
     if (!clean) return { ok: false, error: "Name cannot be empty." };
 
@@ -57,23 +76,23 @@
     const exists = people.some((p) => p.id !== id && normalizeNameKey(p.name) === key);
     if (exists) return { ok: false, error: "Another person already has that name." };
 
-    const updated = { ...people[index], name: clean, updatedAt: Date.now() };
-    const next = [...people];
-    next[index] = updated;
-    writePeople(next);
-
-    return { ok: true, person: updated };
+    await updateDoc(doc(peopleCol, id), { name: clean, updatedAt: Date.now() });
+    return { ok: true };
   }
 
-  function deletePerson(id) {
+  async function deletePerson(id) {
     const people = listPeople();
     const remaining = people.filter((p) => p.id !== id);
     if (remaining.length === people.length) return { ok: false, error: "Person not found." };
 
-    writePeople(remaining);
+    await deleteDoc(doc(peopleCol, id));
 
-    if (App.Transactions && typeof App.Transactions.deleteByPersonId === "function") {
-      App.Transactions.deleteByPersonId(id);
+    const txQuery = query(transCol, where("personId", "==", id));
+    const snapshot = await getDocs(txQuery);
+    if (!snapshot.empty) {
+      const batch = writeBatch(db);
+      snapshot.forEach((docSnap) => batch.delete(docSnap.ref));
+      await batch.commit();
     }
 
     const activeId = getActivePersonId();
@@ -112,6 +131,12 @@
     return getPersonById(getActivePersonId());
   }
 
+  function subscribe(callback) {
+    listeners.add(callback);
+    callback(peopleCache);
+    return () => listeners.delete(callback);
+  }
+
   App.People.MAX_PEOPLE = MAX_PEOPLE;
   App.People.listPeople = listPeople;
   App.People.addPerson = addPerson;
@@ -121,4 +146,8 @@
   App.People.getActivePersonId = getActivePersonId;
   App.People.setActivePersonId = setActivePersonId;
   App.People.getActivePerson = getActivePerson;
+  App.People.subscribe = subscribe;
+  App.People.startListener = startListener;
+
+  startListener();
 })();

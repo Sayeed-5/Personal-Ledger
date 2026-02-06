@@ -97,9 +97,9 @@
         saveBtn.type = "button";
         saveBtn.className = "btn-small";
         saveBtn.textContent = "Save";
-        saveBtn.addEventListener("click", () => {
+        saveBtn.addEventListener("click", async () => {
           clearError("personError");
-          const res = App.People.updatePerson(p.id, input.value);
+          const res = await App.People.updatePerson(p.id, input.value);
           if (!res.ok) {
             setError("personError", res.error);
             return;
@@ -150,11 +150,11 @@
         deleteBtn.type = "button";
         deleteBtn.className = "btn-small btn-danger";
         deleteBtn.textContent = "Delete";
-        deleteBtn.addEventListener("click", () => {
+        deleteBtn.addEventListener("click", async () => {
           clearError("personError");
           const confirmed = window.confirm(`Delete ${p.name} and all their transactions?`);
           if (!confirmed) return;
-          const res = App.People.deletePerson(p.id);
+          const res = await App.People.deletePerson(p.id);
           if (!res.ok) {
             setError("personError", res.error);
             return;
@@ -246,11 +246,11 @@
     const form = el("personForm");
     const input = el("personName");
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearError("personError");
 
-      const res = App.People.addPerson(input.value);
+      const res = await App.People.addPerson(input.value);
       if (!res.ok) {
         setError("personError", res.error);
         return;
@@ -272,7 +272,7 @@
 
     dateEl.value = todayDDMMYYYY();
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearError("txError");
 
@@ -282,7 +282,7 @@
         return;
       }
 
-      const res = App.Transactions.addTransaction({
+      const res = await App.Transactions.addTransaction({
         personId,
         type: typeEl.value,
         amount: amountEl.value,
@@ -318,5 +318,14 @@
   App.Ledger.calculateBalanceForPerson = calculateBalanceForPerson;
   App.Ledger.getStatusForBalance = getStatusForBalance;
 
-  document.addEventListener("DOMContentLoaded", bootstrap);
+  document.addEventListener("DOMContentLoaded", () => {
+    App.People.subscribe(() => {
+      ensureActivePersonStillValid();
+      renderAll();
+    });
+    App.Transactions.subscribe(() => {
+      renderAll();
+    });
+    bootstrap();
+  });
 })();
