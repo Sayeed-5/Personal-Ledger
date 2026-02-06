@@ -49,13 +49,6 @@ import {
     return Array.isArray(peopleCache) ? peopleCache : [];
   }
 
-  function formatError(err, fallback) {
-    if (!err) return fallback;
-    if (typeof err === "string") return err;
-    if (err instanceof Error && err.message) return err.message;
-    return fallback;
-  }
-
   async function addPerson(name) {
     const clean = normalizeName(name);
     if (!clean) return { ok: false, error: "Name cannot be empty." };
@@ -67,12 +60,8 @@ import {
     const exists = people.some((p) => normalizeNameKey(p.name) === key);
     if (exists) return { ok: false, error: "That person already exists." };
 
-    try {
-      const docRef = await addDoc(peopleCol, { name: clean, createdAt: Date.now() });
-      return { ok: true, person: { id: docRef.id, name: clean, createdAt: Date.now() } };
-    } catch (err) {
-      return { ok: false, error: formatError(err, "Unable to add person. Check Firestore access.") };
-    }
+    const docRef = await addDoc(peopleCol, { name: clean, createdAt: Date.now() });
+    return { ok: true, person: { id: docRef.id, name: clean, createdAt: Date.now() } };
   }
 
   async function updatePerson(id, name) {
@@ -87,12 +76,8 @@ import {
     const exists = people.some((p) => p.id !== id && normalizeNameKey(p.name) === key);
     if (exists) return { ok: false, error: "Another person already has that name." };
 
-    try {
-      await updateDoc(doc(peopleCol, id), { name: clean, updatedAt: Date.now() });
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, error: formatError(err, "Unable to update person. Check Firestore access.") };
-    }
+    await updateDoc(doc(peopleCol, id), { name: clean, updatedAt: Date.now() });
+    return { ok: true };
   }
 
   async function deletePerson(id) {
@@ -100,18 +85,14 @@ import {
     const remaining = people.filter((p) => p.id !== id);
     if (remaining.length === people.length) return { ok: false, error: "Person not found." };
 
-    try {
-      await deleteDoc(doc(peopleCol, id));
+    await deleteDoc(doc(peopleCol, id));
 
-      const txQuery = query(transCol, where("personId", "==", id));
-      const snapshot = await getDocs(txQuery);
-      if (!snapshot.empty) {
-        const batch = writeBatch(db);
-        snapshot.forEach((docSnap) => batch.delete(docSnap.ref));
-        await batch.commit();
-      }
-    } catch (err) {
-      return { ok: false, error: formatError(err, "Unable to delete person. Check Firestore access.") };
+    const txQuery = query(transCol, where("personId", "==", id));
+    const snapshot = await getDocs(txQuery);
+    if (!snapshot.empty) {
+      const batch = writeBatch(db);
+      snapshot.forEach((docSnap) => batch.delete(docSnap.ref));
+      await batch.commit();
     }
 
     const activeId = getActivePersonId();

@@ -45,13 +45,6 @@ import { addDoc, onSnapshot, transCol } from "./firebase.js";
     return Math.round(n * 100) / 100;
   }
 
-  function formatError(err, fallback) {
-    if (!err) return fallback;
-    if (typeof err === "string") return err;
-    if (err instanceof Error && err.message) return err.message;
-    return fallback;
-  }
-
   function notify() {
     listeners.forEach((fn) => fn(transactionsCache));
   }
@@ -100,12 +93,8 @@ import { addDoc, onSnapshot, transCol } from "./firebase.js";
       createdAt: Date.now(),
     };
 
-    try {
-      const docRef = await addDoc(transCol, txn);
-      return { ok: true, transaction: { ...txn, id: docRef.id } };
-    } catch (err) {
-      return { ok: false, error: formatError(err, "Unable to add transaction. Check Firestore access.") };
-    }
+    const docRef = await addDoc(transCol, txn);
+    return { ok: true, transaction: { ...txn, id: docRef.id } };
   }
 
   function sortForDisplay(txns) {
