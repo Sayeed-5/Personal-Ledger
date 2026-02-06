@@ -260,7 +260,7 @@
       input.value = "";
       App.People.setActivePersonId(res.person.id);
       renderAll();
-    });
+    };
   }
 
   function wireTransactionForm() {
