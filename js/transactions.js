@@ -1,3 +1,5 @@
+import { addDoc, onSnapshot, transCol } from "./firebase.js";
+
 (() => {
   const App = (window.App = window.App || {});
   App.Transactions = App.Transactions || {};
@@ -7,12 +9,9 @@
     RECEIVED: "RECEIVED",
   });
 
-  function newId() {
-    if (window.crypto && typeof window.crypto.randomUUID === "function") {
-      return window.crypto.randomUUID();
-    }
-    return `t_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  }
+  let transactionsCache = [];
+  let unsubscribe = null;
+  const listeners = new Set();
 
   function parseDDMMYYYYToISO(s) {
     if (typeof s !== "string") return null;
@@ -46,26 +45,37 @@
     return Math.round(n * 100) / 100;
   }
 
-  function listAll() {
-    const txns = App.Data.readTransactions();
-    return Array.isArray(txns) ? txns : [];
+  function formatError(err, fallback) {
+    if (!err) return fallback;
+    if (typeof err === "string") return err;
+    if (err instanceof Error && err.message) return err.message;
+    return fallback;
   }
 
-  function writeAll(txns) {
-    App.Data.writeTransactions(txns);
+  function notify() {
+    listeners.forEach((fn) => fn(transactionsCache));
+  }
+
+  function startListener() {
+    if (unsubscribe) return;
+    unsubscribe = onSnapshot(transCol, (snapshot) => {
+      transactionsCache = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+      notify();
+    });
+  }
+
+  function listAll() {
+    return Array.isArray(transactionsCache) ? transactionsCache : [];
   }
 
   function listByPersonId(personId) {
     return listAll().filter((t) => t.personId === personId);
   }
 
-  function deleteByPersonId(personId) {
-    if (!personId) return;
-    const next = listAll().filter((t) => t.personId !== personId);
-    writeAll(next);
-  }
-
-  function addTransaction({ personId, amount, date, type, note }) {
+  async function addTransaction({ personId, amount, date, type, note }) {
     if (!personId) return { ok: false, error: "No person selected." };
 
     const person = App.People.getPersonById(personId);
@@ -82,7 +92,6 @@
     const cleanNote = String(note || "").trim();
 
     const txn = {
-      id: newId(),
       personId,
       amount: amt,
       date: isoDate,
@@ -91,9 +100,12 @@
       createdAt: Date.now(),
     };
 
-    const all = listAll();
-    writeAll([...all, txn]);
-    return { ok: true, transaction: txn };
+    try {
+      const docRef = await addDoc(transCol, txn);
+      return { ok: true, transaction: { ...txn, id: docRef.id } };
+    } catch (err) {
+      return { ok: false, error: formatError(err, "Unable to add transaction. Check Firestore access.") };
+    }
   }
 
   function sortForDisplay(txns) {
@@ -142,7 +154,14 @@
   App.Transactions.TYPES = TYPES;
   App.Transactions.listAll = listAll;
   App.Transactions.listByPersonId = listByPersonId;
-  App.Transactions.deleteByPersonId = deleteByPersonId;
   App.Transactions.addTransaction = addTransaction;
   App.Transactions.renderTransactionList = renderTransactionList;
+  App.Transactions.subscribe = (callback) => {
+    listeners.add(callback);
+    callback(transactionsCache);
+    return () => listeners.delete(callback);
+  };
+  App.Transactions.startListener = startListener;
+
+  startListener();
 })();
