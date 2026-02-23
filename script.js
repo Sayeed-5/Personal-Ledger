@@ -568,4 +568,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navbar.classList.contains('open') && !navbar.contains(e.target)) closeNavMenu();
         });
     }
+
+    // PWA: register service worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
 });
