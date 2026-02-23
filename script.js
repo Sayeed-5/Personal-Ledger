@@ -540,4 +540,32 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Collapsible navbar (mobile)
+    const navbar = document.getElementById('navbar');
+    const btnNavToggle = document.getElementById('btn-nav-toggle');
+    const navAuth = document.getElementById('nav-auth');
+    if (navbar && btnNavToggle) {
+        function closeNavMenu() {
+            navbar.classList.remove('open');
+            btnNavToggle.setAttribute('aria-expanded', 'false');
+        }
+        function openNavMenu() {
+            navbar.classList.add('open');
+            btnNavToggle.setAttribute('aria-expanded', 'true');
+            if (window.lucide) lucide.createIcons();
+        }
+        btnNavToggle.addEventListener('click', () => {
+            if (navbar.classList.contains('open')) closeNavMenu();
+            else openNavMenu();
+        });
+        if (navAuth) {
+            navAuth.addEventListener('click', (e) => {
+                if (e.target.closest('a') || e.target.closest('button')) closeNavMenu();
+            });
+        }
+        document.addEventListener('click', (e) => {
+            if (navbar.classList.contains('open') && !navbar.contains(e.target)) closeNavMenu();
+        });
+    }
 });
