@@ -10,7 +10,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">Personal Ledger</a>
+        <div class="nav-auth" id="nav-auth">
+            <a href="login.html" class="btn btn-login" id="btn-nav-login">Login</a>
+            <div class="user-info hidden" id="user-info">
+                <span class="user-name" id="nav-user-name"></span>
+                <i data-lucide="user" class="user-icon" aria-hidden="true"></i>
+                <button type="button" class="btn btn-logout" id="btn-nav-logout" title="Logout">
+                    <i data-lucide="log-out" class="btn-logout-icon" aria-hidden="true"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="app-container hidden" id="app-container">
         <!-- Left Sidebar: People -->
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -83,7 +97,10 @@
                             <input type="text" id="note" name="note" placeholder="e.g. Dinner, Movie tickets">
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-block">Add Transaction</button>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-block" id="btn-transaction-submit">Add Transaction</button>
+                            <button type="button" class="btn btn-outline hidden" id="btn-transaction-cancel">Cancel</button>
+                        </div>
                     </form>
                 </section>
 
@@ -114,6 +131,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyA4TZ52zcq06rFrO8d9_uSFNVMD6rl6V7M",
