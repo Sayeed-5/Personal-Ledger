@@ -7,6 +7,7 @@ class DataService {
     async addPerson(name) { throw new Error("Method not implemented."); }
     async getTransactions(personId) { throw new Error("Method not implemented."); }
     async addTransaction(transaction) { throw new Error("Method not implemented."); }
+    async updateTransaction(id, transaction) { throw new Error("Method not implemented."); }
     async deleteTransaction(id) { throw new Error("Method not implemented."); }
     async deletePerson(id) { throw new Error("Method not implemented."); }
     async updatePerson(id, name) { throw new Error("Method not implemented."); }
@@ -97,6 +98,15 @@ class LocalStorageService extends DataService {
         return newTransaction;
     }
 
+    async updateTransaction(id, updates) {
+        const transactions = this._getStoredTransactions();
+        const idx = transactions.findIndex(t => t.id === id);
+        if (idx !== -1) {
+            transactions[idx] = { ...transactions[idx], ...updates };
+            localStorage.setItem(this.STORAGE_KEY_TRANSACTIONS, JSON.stringify(transactions));
+        }
+    }
+
     async deleteTransaction(id) {
         let transactions = this._getStoredTransactions();
         transactions = transactions.filter(t => t.id !== id);
@@ -106,14 +116,16 @@ class LocalStorageService extends DataService {
 
 /**
  * Firebase (Firestore) Implementation
- * Data syncs across devices (phone, laptop) via cloud.
+ * Uses users/{userId}/people and users/{userId}/transactions (per-user data).
  */
 class FirebaseDataService extends DataService {
-    constructor() {
+    constructor(userId) {
         super();
+        if (!userId) throw new Error('FirebaseDataService requires userId.');
         this.db = firebase.firestore();
-        this.peopleCol = this.db.collection('people');
-        this.transactionsCol = this.db.collection('transactions');
+        const userRef = this.db.collection('users').doc(userId);
+        this.peopleCol = userRef.collection('people');
+        this.transactionsCol = userRef.collection('transactions');
     }
 
     async getPeople() {
@@ -178,6 +190,10 @@ class FirebaseDataService extends DataService {
         return { id: ref.id, personId, amount, date, type, note: note || '' };
     }
 
+    async updateTransaction(id, updates) {
+        await this.transactionsCol.doc(id).update(updates);
+    }
+
     async deleteTransaction(id) {
         await this.transactionsCol.doc(id).delete();
     }
@@ -193,7 +209,8 @@ class App {
         this.state = {
             people: [],
             activePersonId: null,
-            transactions: []
+            transactions: [],
+            editingTransactionId: null
         };
 
         // DOM Elements
@@ -212,6 +229,8 @@ class App {
             inpAmount: document.getElementById('amount'),
             inpDate: document.getElementById('date'),
             inpNote: document.getElementById('note'),
+            btnTransactionSubmit: document.getElementById('btn-transaction-submit'),
+            btnTransactionCancel: document.getElementById('btn-transaction-cancel'),
         };
 
         this.init();
@@ -234,6 +253,9 @@ class App {
 
         // Add Transaction
         this.el.transactionForm.addEventListener('submit', (e) => this.handleAddTransaction(e));
+        if (this.el.btnTransactionCancel) {
+            this.el.btnTransactionCancel.addEventListener('click', () => this.clearEditTransaction());
+        }
     }
 
     async refreshPeopleList() {
@@ -317,6 +339,7 @@ class App {
     }
 
     async setActivePerson(id) {
+        this.clearEditTransaction();
         this.state.activePersonId = id;
         this.renderPeopleList(); // Re-render to update active state styling
 
@@ -394,7 +417,7 @@ class App {
             
             row.querySelector('.edit-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
-                alert("Edit functionality to be implemented (or populates form)");
+                this.handleEditTransaction(t);
             });
 
             this.el.transactionsList.appendChild(row);
@@ -418,6 +441,25 @@ class App {
         await this.refreshPeopleList();
     }
 
+    handleEditTransaction(t) {
+        this.state.editingTransactionId = t.id;
+        this.el.inpAmount.value = t.amount;
+        this.el.inpDate.value = t.date;
+        this.el.inpNote.value = t.note || '';
+        const typeRadio = this.el.transactionForm.querySelector(`input[name="type"][value="${t.type}"]`);
+        if (typeRadio) typeRadio.checked = true;
+        if (this.el.btnTransactionSubmit) this.el.btnTransactionSubmit.textContent = 'Update Transaction';
+        if (this.el.btnTransactionCancel) this.el.btnTransactionCancel.classList.remove('hidden');
+    }
+
+    clearEditTransaction() {
+        this.state.editingTransactionId = null;
+        this.el.transactionForm.reset();
+        this.el.inpDate.valueAsDate = new Date();
+        if (this.el.btnTransactionSubmit) this.el.btnTransactionSubmit.textContent = 'Add Transaction';
+        if (this.el.btnTransactionCancel) this.el.btnTransactionCancel.classList.add('hidden');
+    }
+
     async handleAddTransaction(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -430,23 +472,23 @@ class App {
             return;
         }
 
-        const transaction = {
+        const payload = {
             personId: this.state.activePersonId,
-            amount: rawAmount, // Store as string or number, ensure consistency. JSON handles number fine. 
+            amount: rawAmount,
             date: formData.get('date'),
             type: formData.get('type'),
             note: formData.get('note')
         };
 
-        await this.dataService.addTransaction(transaction);
+        if (this.state.editingTransactionId) {
+            await this.dataService.updateTransaction(this.state.editingTransactionId, payload);
+        } else {
+            await this.dataService.addTransaction(payload);
+        }
         
-        // Reset form
-        e.target.reset();
-        this.el.inpDate.valueAsDate = new Date(); // Reset date to today
-        
-        // Refresh UI
-        await this.refreshPeopleList(); // Update Sidebar balance
-        await this.setActivePerson(this.state.activePersonId); // Refresh details
+        this.clearEditTransaction();
+        await this.refreshPeopleList();
+        await this.setActivePerson(this.state.activePersonId);
     }
 
     async handleDeleteTransaction(id) {
@@ -458,9 +500,44 @@ class App {
     }
 }
 
-// Initialize App – using Firebase so data syncs across phone & laptop
+// Auth + App bootstrap: wait for auth state, then show navbar and init app or redirect to login
 document.addEventListener('DOMContentLoaded', () => {
-    // const dataService = new LocalStorageService(); // commented: using Firebase only
-    const dataService = new FirebaseDataService();
-    const app = new App(dataService);
+    const btnLogin = document.getElementById('btn-nav-login');
+    const userInfo = document.getElementById('user-info');
+    const navUserName = document.getElementById('nav-user-name');
+    const btnLogout = document.getElementById('btn-nav-logout');
+    const appContainer = document.getElementById('app-container');
+
+    function updateNavbar(user) {
+        if (user) {
+            btnLogin.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            const name = user.displayName || (user.email && user.email.split('@')[0]) || 'User';
+            navUserName.textContent = name;
+            if (window.lucide) lucide.createIcons();
+        } else {
+            btnLogin.classList.remove('hidden');
+            userInfo.classList.add('hidden');
+        }
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+        if (!user) {
+            updateNavbar(null);
+            window.location.replace('login.html');
+            return;
+        }
+        updateNavbar(user);
+        if (appContainer) appContainer.classList.remove('hidden');
+        const dataService = new FirebaseDataService(user.uid);
+        const app = new App(dataService);
+    });
+
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            firebase.auth().signOut().then(() => {
+                window.location.replace('login.html');
+            });
+        });
+    }
 });
