@@ -1,0 +1,451 @@
+@import "tailwindcss";
+
+/* ============================================================
+   PERSONAL LEDGER — DESIGN SYSTEM
+   CSS custom properties with [data-theme] switching.
+   Dark theme is the default; light theme is toggled via
+   data-theme="light" on the <html> element.
+   ============================================================ */
+
+/* ─── DARK THEME (default) ─── */
+:root,
+[data-theme="dark"] {
+  --bg-dark: #0f1115;
+  --bg-panel: #151a20;
+  --bg-hover: #1e252e;
+  --bg-input: #0f1115;
+
+  --accent: #06b6d4;
+  --accent-hover: #0891b2;
+  --accent-ring: rgba(6, 182, 212, 0.15);
+  --accent-border: rgba(6, 182, 212, 0.2);
+
+  --positive: #10b981;
+  --positive-bg: rgba(16, 185, 129, 0.1);
+  --negative: #ef4444;
+  --negative-bg: rgba(239, 68, 68, 0.1);
+
+  --text: #f3f4f6;
+  --text-dim: #9ca3af;
+  --text-inv: #0f172a;
+
+  --line: #27272a;
+  --line-faint: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.04);
+
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.18),
+    0 2px 4px -1px rgba(0, 0, 0, 0.12);
+
+  /* Legacy aliases used in components */
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-hover: var(--bg-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-positive: var(--positive);
+  --color-positive-bg: var(--positive-bg);
+  --color-negative: var(--negative);
+  --color-negative-bg: var(--negative-bg);
+  --color-text-main: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-dark: var(--text-inv);
+  --color-line: var(--line);
+  --color-line-faint: var(--line-faint);
+}
+
+/* ─── LIGHT THEME ─── */
+[data-theme="light"] {
+  --bg-dark: #f0f2f5;
+  --bg-panel: #ffffff;
+  --bg-hover: #f5f7fa;
+  --bg-input: #f7f8fa;
+
+  --accent: #0891b2;
+  --accent-hover: #0e7490;
+  --accent-ring: rgba(8, 145, 178, 0.12);
+  --accent-border: rgba(8, 145, 178, 0.25);
+
+  --positive: #059669;
+  --positive-bg: rgba(5, 150, 105, 0.1);
+  --negative: #dc2626;
+  --negative-bg: rgba(220, 38, 38, 0.08);
+
+  --text: #111827;
+  --text-dim: #6b7280;
+  --text-inv: #ffffff;
+
+  --line: #e5e7eb;
+  --line-faint: rgba(0, 0, 0, 0.05);
+  --card-border: rgba(0, 0, 0, 0.06);
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+
+  /* Legacy aliases */
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-hover: var(--bg-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-positive: var(--positive);
+  --color-positive-bg: var(--positive-bg);
+  --color-negative: var(--negative);
+  --color-negative-bg: var(--negative-bg);
+  --color-text-main: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-dark: var(--text-inv);
+  --color-line: var(--line);
+  --color-line-faint: var(--line-faint);
+}
+
+/* ─── RESETS ─── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.4);
+}
+
+/* ─── CARD ─── */
+.ledger-card {
+  background-color: var(--bg-panel);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+
+/* ─── INPUT ─── */
+.ledger-input {
+  background-color: var(--bg-input);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, background-color 0.25s;
+  width: 100%;
+}
+
+.ledger-input:focus {
+  border-color: var(--accent);
+}
+
+.ledger-input::placeholder {
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+/* ─── BUTTONS ─── */
+.btn-primary {
+  background-color: var(--accent);
+  color: var(--text-inv);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+
+/* ─── ICON BUTTONS ─── */
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.18);
+  background-color: rgba(128, 128, 128, 0.07);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  background-color: rgba(128, 128, 128, 0.14);
+}
+
+.icon-btn.edit:hover {
+  color: var(--accent);
+  background-color: var(--accent-ring);
+  border-color: var(--accent-border);
+}
+
+.icon-btn.delete:hover {
+  color: var(--negative);
+  background-color: var(--negative-bg);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* ─── THEME TOGGLE BUTTON ─── */
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-hover);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-ring);
+}
+
+/* ─── CUSTOM RADIO ─── */
+.custom-radio {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.custom-radio.checked {
+  border-color: var(--accent);
+}
+
+.custom-radio.checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent);
+  border-radius: 50%;
+}
+
+/* ─── BADGES ─── */
+.badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.badge-positive {
+  color: var(--positive);
+  background: var(--positive-bg);
+}
+
+.badge-negative {
+  color: var(--negative);
+  background: var(--negative-bg);
+}
+
+.badge-neutral {
+  color: var(--text-dim);
+  background: var(--bg-hover);
+}
+
+.type-badge {
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.type-given {
+  color: var(--positive);
+  background: var(--positive-bg);
+}
+
+.type-received {
+  color: var(--negative);
+  background: var(--negative-bg);
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.anim-fade {
+  animation: fadeIn 0.3s ease both;
+}
+
+.anim-fade-up {
+  animation: fadeInUp 0.5s ease both;
+}
+
+.stagger>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger>*:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.stagger>*:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.stagger>*:nth-child(4) {
+  animation-delay: 300ms;
+}
+
+/* ─── DATE INPUT ─── */
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+input[type="date"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] input[type="date"] {
+  color-scheme: light;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+  }
+
+  .dashboard-sidebar {
+    max-height: 35vh !important;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .form-grid-3> :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-grid-3> :last-child {
+    grid-column: 1;
+  }
+}
