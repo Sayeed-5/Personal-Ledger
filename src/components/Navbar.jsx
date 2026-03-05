@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -52,6 +52,14 @@ export default function Navbar() {
     const { theme, toggleTheme } = useTheme();
     const isDark = theme === 'dark';
     const [menuOpen, setMenuOpen] = useState(false);
+
+    useEffect(() => {
+        const onResize = () => {
+            if (window.innerWidth > 768) setMenuOpen(false);
+        };
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
 
     const handleLogout = async () => {
         try { await logout(); } catch (err) { console.error(err); }
