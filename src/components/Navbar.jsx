@@ -51,13 +51,17 @@ export default function Navbar() {
     const { user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const isDark = theme === 'dark';
+    const [menuOpen, setMenuOpen] = useState(false);
 
     const handleLogout = async () => {
         try { await logout(); } catch (err) { console.error(err); }
+        setMenuOpen(false);
     };
 
+    const closeMenu = () => setMenuOpen(false);
+
     return (
-        <nav style={{
+        <nav className="navbar" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '14px 24px',
             backgroundColor: 'var(--bg-panel)',
@@ -75,12 +79,24 @@ export default function Navbar() {
             }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text)'; }}
+                onClick={closeMenu}
             >
                 Personal Ledger
             </Link>
 
-            {/* ── Right side ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* ── Hamburger (visible only on mobile) ── */}
+            <button
+                type="button"
+                className="navbar-toggler"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={menuOpen}
+            >
+                {menuOpen ? <IconClose /> : <IconHamburger />}
+            </button>
+
+            {/* ── Right side (desktop: inline; mobile: expandable panel) ── */}
+            <div className={`navbar-menu ${menuOpen ? 'navbar-menu-open' : ''}`}>
 
                 {/* ── Theme toggle ── */}
                 <button
@@ -97,7 +113,7 @@ export default function Navbar() {
                         {/* Dashboard button */}
                         <Link to="/dashboard" className="btn-primary" style={{
                             padding: '8px 16px', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 600,
-                        }}>
+                        }} onClick={closeMenu}>
                             Dashboard
                         </Link>
 
@@ -126,10 +142,11 @@ export default function Navbar() {
                         }}
                             onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text)'; }}
                             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-dim)'; }}
+                            onClick={closeMenu}
                         >
                             Login
                         </Link>
-                        <Link to="/register" className="btn-primary" style={{ padding: '8px 16px', textDecoration: 'none', fontSize: '0.95rem' }}>
+                        <Link to="/register" className="btn-primary" style={{ padding: '8px 16px', textDecoration: 'none', fontSize: '0.95rem' }} onClick={closeMenu}>
                             Get Started
                         </Link>
                     </>
