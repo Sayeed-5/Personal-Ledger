@@ -1,6 +1,11 @@
 // Firebase configuration — modular SDK (v9+)
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import {
+  initializeAuth,
+  browserLocalPersistence,
+  indexedDBLocalPersistence,
+  GoogleAuthProvider,
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -13,7 +18,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+// Explicitly set persistence so the user stays logged in on mobile / PWA.
+// indexedDB is preferred (works best in PWAs); localStorage is the fallback.
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+});
+
 export const db = getFirestore(app);
 
 // Google provider — configured once, reused across auth functions

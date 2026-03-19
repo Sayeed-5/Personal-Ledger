@@ -40,8 +40,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Cache Firebase SDK and app assets
+        // Cache app assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Don't let the SW intercept Firebase Auth redirects
+        navigateFallbackDenylist: [/^\/__(\/.*)?$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -60,6 +62,15 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
               cacheableResponse: { statuses: [0, 200] },
             },
+          },
+          // Never cache Firebase Auth endpoints — token refresh must always hit network
+          {
+            urlPattern: /^https:\/\/identitytoolkit\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^https:\/\/securetoken\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly',
           },
         ],
       },
