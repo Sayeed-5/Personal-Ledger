@@ -64,7 +64,8 @@ export default function LoginPage() {
             await login(email.trim(), password);
             navigate('/dashboard', { replace: true });
         } catch (err) {
-            setError(friendlyError(err.code));
+            console.error("Login email error:", err);
+            setError(friendlyError(err));
         } finally { setLoading(false); }
     };
 
@@ -76,7 +77,8 @@ export default function LoginPage() {
             navigate('/dashboard', { replace: true });
         } catch (err) {
             if (err.code !== 'auth/popup-closed-by-user') {
-                setError(friendlyError(err.code));
+                console.error("Login Google error:", err);
+                setError(friendlyError(err));
             }
         } finally { setGLoading(false); }
     };
@@ -128,15 +130,19 @@ export default function LoginPage() {
 }
 
 /* Map Firebase error codes to friendly messages */
-function friendlyError(code) {
+function friendlyError(err) {
+    const code = err?.code || '';
     const map = {
         'auth/user-not-found': 'No account found with this email.',
         'auth/wrong-password': 'Incorrect password. Please try again.',
         'auth/invalid-email': 'Please enter a valid email address.',
         'auth/invalid-credential': 'Invalid email or password.',
+        'auth/invalid-login-credentials': 'Invalid email or password.',
         'auth/too-many-requests': 'Too many attempts. Please wait a moment.',
         'auth/network-request-failed': 'Network error. Check your connection.',
         'auth/popup-blocked': 'Popup blocked. Allow popups for this site.',
     };
-    return map[code] || 'Something went wrong. Please try again.';
+    if (map[code]) return map[code];
+    if (err?.message) return err.message;
+    return 'Something went wrong. Please try again.';
 }
